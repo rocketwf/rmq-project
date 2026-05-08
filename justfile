@@ -35,6 +35,10 @@ build-kotlin:
     printf '#!/usr/bin/env sh\nexec java -jar "$(dirname "$0")/rmq-kotlin/rmq-kotlin.jar" "$@"\n' > rmq
     chmod +x rmq
 
+build-haskell:
+    ghc -O3 -package vector -package time -package directory rmq-haskell/Rmq.hs -o rmq-haskell/rmq-haskell
+    cp rmq-haskell/rmq-haskell rmq
+
 run:
     ./rmq input > data.csv
 

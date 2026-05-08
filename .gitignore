@@ -3,4 +3,7 @@
 /rmq-java/build/
 /rmq-go/rmq-go
 /rmq-kotlin/rmq-kotlin.jar
+/rmq-haskell/rmq-haskell
+/rmq-haskell/*.hi
+/rmq-haskell/*.o
 /rmq-csharp/*.exe
