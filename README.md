@@ -99,9 +99,9 @@ Submit a `abcd12.zip` file of this repo named after your student ID. It should c
     - Contains (at least) the three plots.
     - *Analyse the results*: do the results match your expectations? If so, how
       closely? If not, why do they not match? 
-    - Does the space usage of the methods match the theory? Both asymptotically
+    - Does the space usage of each method match the theory? Both asymptotically
       and numerically?
-    - Does the query time of the methods match the theory? Again, both
+    - Does the query time of each method match the theory? Again, both
       asymptotically and numerically?
     - Which algorithms are Pareto-optimal? Which algorithms are best for small
       space? For speed? And what would you choose as general-purpose balanced
