@@ -1,6 +1,6 @@
 .PHONY: all generate_input build build-rust build-cpp build-java build-csharp build-go build-kotlin build-haskell run plot open-plots latex latex-debug
 
-all: build run plot open-plots
+all: build run plot 
 
 # Run the input-generator program and write to input/{n}.in
 generate_input:

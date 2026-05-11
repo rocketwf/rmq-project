@@ -4,10 +4,16 @@ The project is to implement the following range minimum query (RMQ) algorithms:
 - compute on the fly,
 - precompute all queries,
 - sparse array,
+- segment tree,
 - block based approach (with varying block size),
+  - Include both the variant that computes suffix/prefix minima on the fly, and
+    the variant that precomputes them.
 - Cartesian trees (with varying block size).
+  - Optional: Implement the recursive approaches that use $O(n)$ /bits/ or even
+    $2n+o(n)$ bits.
+ 
 
-Optimizing the code is encouraged but optional.
+Optimizing the code, both for speed and space usage, is encouraged but optional.
 
 Then, write a report comparing the methods via 3 plots:
 - how does *query time* scale with `n`?
@@ -90,19 +96,24 @@ Feel free to modify this to your liking, but please keep the output file names t
 ## Report
 Submit a zip of this repo, excluding the `input` directory.
 Submit a `abcd12.zip` file of this repo named after your student ID. It should contain:
+- Your code. Update the `makefile` and/or `justfile` so that `build` builds your
+  code. Remove templates for other languages.
 - `/report.pdf`: a report (in English) containing:
   - *Introduction*: Briefly explains the files you submitted;
-  - *Methods*: Briefly explains the algorithms you implemented.
+  - *Methods*: Briefly explains the algorithms you implemented and any
+    optimizations you did. Specifically, explain the data structures (vectors,
+    hash maps, ...) you used and what data they contain.
+
     State the asymptotic space and query time complexity of each method.
-    - In case you did more than the minimum: explain any optimizations you did.
+    Which methods are the fastest and smallest according to the theory?
   - *Results*: This is the focus of the report.
     - Contains (at least) the three plots.
     - *Analyse the results*: do the results match your expectations? If so, how
       closely? If not, why do they not match? 
     - Does the space usage of each method match the theory? Both asymptotically
-      and numerically?
+      and numerically? Try to explain the observations.
     - Does the query time of each method match the theory? Again, both
-      asymptotically and numerically?
+      asymptotically and numerically? Try to explain the observations.
     - Which algorithms are Pareto-optimal? Which algorithms are best for small
       space? For speed? And what would you choose as general-purpose balanced
       tradeoff? Motivate your choice.
