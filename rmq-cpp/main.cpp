@@ -37,10 +37,36 @@ struct Naive {
 
 struct Precompute {
 	static std::string name() {return "PrecomputeQueries"; };
-	static size_t max_n();
-	static Precompute build(const std::vector<uint64_t>& data);
-	size_t space() const;
-	uint64_t query(size_t l, size_t r) const;
+
+	static size_t max_n() { return 30'000; };
+
+	size_t n;
+	std::vector<uint64_t> lookup_table;
+
+	static Precompute build(const std::vector<uint64_t>& data) {
+		std::vector<uint64_t> lu;
+		size_t n = data.size();
+
+	  lu.resize((n * n + n) / 2);
+
+		size_t row_start = 0;
+
+	  for (size_t l = 0; l < n; l++) {
+	    lu[row_start] = data[l];
+	    for (size_t r = l + 1; r < n; r++) {
+	      lu[row_start + r - l] = std::min(lu[row_start + r - l - 1], data[r]);
+	    }
+			row_start += n - l;
+	  }
+		return {n, std::move(lu)};
+	};
+
+	size_t space() const {return sizeof(*this) + (lookup_table.capacity() * sizeof(uint64_t)); };
+
+	uint64_t query(size_t l, size_t r) const {
+    size_t row_start = l * n - (l * (l - 1)) / 2;
+    return lookup_table[row_start + r - l];
+  };
 };
 
 struct SparseArray {
