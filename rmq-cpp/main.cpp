@@ -20,7 +20,7 @@
 struct Naive {
 	static std::string name() { return "QuadraticQuery"; }
 	// NOTE: Improved implementations should simply return size_t::MAX.
-	static size_t max_n() { return 10'000; }
+	static size_t max_n() { return 30'000; }
 
 	const std::vector<uint64_t>* data;
 
@@ -35,9 +35,45 @@ struct Naive {
 	}
 };
 
-// -------------------------------------------------------------
-// TODO: Implement the RMQ interface for additional data structures.
-// -------------------------------------------------------------
+struct Precompute {
+	static std::string name() {return "PrecomputeQueries"; };
+	static size_t max_n();
+	static Precompute build(const std::vector<uint64_t>& data);
+	size_t space() const;
+	uint64_t query(size_t l, size_t r) const;
+};
+
+struct SparseArray {
+	static std::string name() { return "SparseArray"; };
+	static size_t max_n();  // optional, defaults to SIZE_MAX
+	static SparseArray build(const std::vector<uint64_t>& data);
+	size_t space() const;
+	uint64_t query(size_t l, size_t r) const;
+};
+
+struct SegmentTree {
+  static std::string name() { return "SegmentTree"; };
+  static size_t max_n();  // optional, defaults to SIZE_MAX
+  static SegmentTree build(const std::vector<uint64_t>& data);
+  size_t space() const;
+  uint64_t query(size_t l, size_t r) const;
+};
+
+struct BlockBased {
+  static std::string name() { return "BlockBased"; };
+  static size_t max_n();  // optional, defaults to SIZE_MAX
+  static BlockBased build(const std::vector<uint64_t>& data);
+  size_t space() const;
+  uint64_t query(size_t l, size_t r) const;
+};
+
+struct CartesianTree {
+  static std::string name() { return "CartesianTree"; };
+  static size_t max_n();  // optional, defaults to SIZE_MAX
+  static Precompute build(const std::vector<uint64_t>& data);
+  size_t space() const;
+  uint64_t query(size_t l, size_t r) const;
+};
 
 struct Input {
 	std::vector<uint64_t> data;
@@ -112,6 +148,7 @@ int main(int argc, char* argv[]) {
 
 	for(const auto& input : inputs) {
 		bench<Naive>(input);
+		bench<Precompute>(input);
 		// TODO: Add other implementations here.
 	}
 
