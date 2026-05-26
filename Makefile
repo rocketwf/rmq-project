@@ -8,14 +8,14 @@ generate_input:
 
 # TODO: Customize this for your language.
 # Make sure to end with a `rmq` binary in the root directory.
-build: build-rust
+build: build-cpp
 
 build-rust:
 	cd rmq-rust && cargo build --release
 	cp rmq-rust/target/release/rmq-rust rmq
 
 build-cpp:
-	g++ -std=c++17 -O3 -march=native rmq-cpp/*.cpp -o rmq
+	g++ -std=c++20 -O3 -march=native rmq-cpp/*.cpp -o rmq
 
 build-java:
 	javac -d rmq-java/build rmq-java/Rmq.java

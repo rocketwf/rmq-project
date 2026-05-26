@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <bit>
 
 // RMQ interface (duck-typed via templates):
 //
@@ -71,10 +72,32 @@ struct Precompute {
 
 struct SparseArray {
 	static std::string name() { return "SparseArray"; };
-	static size_t max_n();  // optional, defaults to SIZE_MAX
-	static SparseArray build(const std::vector<uint64_t>& data);
-	size_t space() const;
-	uint64_t query(size_t l, size_t r) const;
+	static size_t max_n() { return 10'000'000; };
+	std::vector<std::vector<uint64_t>> _tree;
+	static SparseArray build(const std::vector<uint64_t>& data) {
+		int k = std::bit_width(data.size()); // maximum level
+		decltype(_tree) tree(k, std::vector<uint64_t>(data.size()));
+		tree[0] = data;
+
+		for (size_t lvl = 1; lvl < k; lvl++) {
+			for (size_t i = 0; i + (1 << lvl) <= data.size(); i++) {
+				tree[lvl][i] = std::min(tree[lvl - 1][i], tree[lvl - 1][i + (1 << (lvl - 1))]);
+			}
+		}
+		return {std::move(tree)};
+	};
+	size_t space() const {
+		size_t mem = sizeof(*this);
+		mem += _tree.capacity() * sizeof(std::vector<uint64_t>);
+		for (const auto& row : _tree) {
+        	mem += row.capacity() * sizeof(uint64_t);
+    	}
+		return mem;
+	};
+	uint64_t query(size_t l, size_t r) const {
+		int k = std::bit_width(r - l + 1) - 1;
+		return std::min(_tree[k][l], _tree[k][r - (1 << k) + 1]);
+	};
 };
 
 struct SegmentTree {
@@ -175,6 +198,7 @@ int main(int argc, char* argv[]) {
 	for(const auto& input : inputs) {
 		bench<Naive>(input);
 		bench<Precompute>(input);
+		bench<SparseArray>(input);
 		// TODO: Add other implementations here.
 	}
 
