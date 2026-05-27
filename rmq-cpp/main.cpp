@@ -48,40 +48,41 @@ struct Precompute {
 		std::vector<uint64_t> lu;
 		size_t n = data.size();
 
-	  lu.resize((n * n + n) / 2);
+		lu.resize((n * n + n) / 2);
 
 		size_t row_start = 0;
 
-	  for (size_t l = 0; l < n; l++) {
-	    lu[row_start] = data[l];
-	    for (size_t r = l + 1; r < n; r++) {
-	      lu[row_start + r - l] = std::min(lu[row_start + r - l - 1], data[r]);
-	    }
+		for (size_t l = 0; l < n; l++) {
+		lu[row_start] = data[l];
+		for (size_t r = l + 1; r < n; r++) {
+			lu[row_start + r - l] = std::min(lu[row_start + r - l - 1], data[r]);
+		}
 			row_start += n - l;
-	  }
+		}
 		return {n, std::move(lu)};
 	};
 
 	size_t space() const {return sizeof(*this) + (lookup_table.capacity() * sizeof(uint64_t)); };
 
 	uint64_t query(size_t l, size_t r) const {
-    size_t row_start = l * n - (l * (l - 1)) / 2;
-    return lookup_table[row_start + r - l];
-  };
+	size_t row_start = l * n - (l * (l - 1)) / 2;
+	return lookup_table[row_start + r - l];
+	};
 };
 
-struct SparseArray {
-	static std::string name() { return "SparseArray"; };
+struct SparseArrayA {
+	static std::string name() { return "SparseArrayA"; };
 	static size_t max_n() { return 10'000'000; };
 	std::vector<std::vector<uint64_t>> _tree;
-	static SparseArray build(const std::vector<uint64_t>& data) {
+	static SparseArrayA build(const std::vector<uint64_t>& data) {
 		int k = std::bit_width(data.size()); // maximum level
 		decltype(_tree) tree(k, std::vector<uint64_t>(data.size()));
 		tree[0] = data;
 
 		for (size_t lvl = 1; lvl < k; lvl++) {
 			for (size_t i = 0; i + (1 << lvl) <= data.size(); i++) {
-				tree[lvl][i] = std::min(tree[lvl - 1][i], tree[lvl - 1][i + (1 << (lvl - 1))]);
+				tree[lvl][i] = std::min(tree[lvl - 1][i], 
+																tree[lvl - 1][i + (1 << (lvl - 1))]);
 			}
 		}
 		return {std::move(tree)};
@@ -90,8 +91,8 @@ struct SparseArray {
 		size_t mem = sizeof(*this);
 		mem += _tree.capacity() * sizeof(std::vector<uint64_t>);
 		for (const auto& row : _tree) {
-        	mem += row.capacity() * sizeof(uint64_t);
-    	}
+			mem += row.capacity() * sizeof(uint64_t);
+		}
 		return mem;
 	};
 	uint64_t query(size_t l, size_t r) const {
@@ -100,28 +101,77 @@ struct SparseArray {
 	};
 };
 
+struct SparseArrayB {
+	static std::string name() { return "SparseArrayB"; }
+	static size_t max_n() { return 10'000'000; } 
+
+	std::vector<std::vector<uint64_t>> _tree;
+
+	static SparseArrayB build(const std::vector<uint64_t>& data) {
+		int k = std::bit_width(data.size()); // maximum level
+		std::vector<std::vector<uint64_t>> tree(data.size(), std::vector<uint64_t>(k));
+		for (size_t i = 0; i < data.size(); ++i) {
+			tree[i][0] = data[i];
+		}
+		// Build the sparse table
+		for (size_t lvl = 1; lvl < k; lvl++) {
+			for (size_t i = 0; i + (1 << lvl) <= data.size(); i++) {
+				tree[i][lvl] = std::min(tree[i][lvl - 1], 
+																tree[i + (1 << (lvl - 1))][lvl - 1]);
+			}
+		}
+		return {std::move(tree)};
+	}
+	size_t space() const {
+		size_t mem = sizeof(*this);
+		mem += _tree.capacity() * sizeof(std::vector<uint64_t>);
+		for (const auto& row : _tree) {
+			mem += row.capacity() * sizeof(uint64_t);
+		}
+		return mem;
+	}
+	uint64_t query(size_t l, size_t r) const {
+		int k = std::bit_width(r - l + 1) - 1;
+		return std::min(_tree[l][k], _tree[r - (1 << k) + 1][k]);
+	}
+};
+
 struct SegmentTree {
-  static std::string name() { return "SegmentTree"; };
-  static size_t max_n();  // optional, defaults to SIZE_MAX
-  static SegmentTree build(const std::vector<uint64_t>& data);
-  size_t space() const;
-  uint64_t query(size_t l, size_t r) const;
+	static std::string name() { return "SegmentTree"; };
+	static size_t max_n();  // optional, defaults to SIZE_MAX
+	std::vector<std::vector<uint64_t>> _tree;
+
+	static SegmentTree build(const std::vector<uint64_t>& data) {
+		int k = std::bit_width(data.size()); // maximum level
+		decltype(_tree) tree(k);
+		tree[0] = data;
+		for (size_t lvl = 1; lvl < tree.size(); ++lvl) {
+			tree[lvl].emplace_back(std::vector<uint64_t>(data.size() / (1 << lvl)));
+			for (size_t i = 0; i <= data.size() / (1 << lvl); i += 2) {
+				tree[lvl][i] = std::min(tree[lvl - 1][i], tree[lvl - 1][i + 1]);
+			}
+		}
+		
+		return {std::move(tree)};
+	};
+	size_t space() const;
+	uint64_t query(size_t l, size_t r) const;
 };
 
 struct BlockBased {
-  static std::string name() { return "BlockBased"; };
-  static size_t max_n();  // optional, defaults to SIZE_MAX
-  static BlockBased build(const std::vector<uint64_t>& data);
-  size_t space() const;
-  uint64_t query(size_t l, size_t r) const;
+	static std::string name() { return "BlockBased"; };
+	static size_t max_n();  // optional, defaults to SIZE_MAX
+	static BlockBased build(const std::vector<uint64_t>& data);
+	size_t space() const;
+	uint64_t query(size_t l, size_t r) const;
 };
 
 struct CartesianTree {
-  static std::string name() { return "CartesianTree"; };
-  static size_t max_n();  // optional, defaults to SIZE_MAX
-  static Precompute build(const std::vector<uint64_t>& data);
-  size_t space() const;
-  uint64_t query(size_t l, size_t r) const;
+	static std::string name() { return "CartesianTree"; };
+	static size_t max_n();  // optional, defaults to SIZE_MAX
+	static Precompute build(const std::vector<uint64_t>& data);
+	size_t space() const;
+	uint64_t query(size_t l, size_t r) const;
 };
 
 struct Input {
@@ -163,14 +213,14 @@ void bench(const Input& input) {
 	auto end = std::chrono::high_resolution_clock::now();
 
 	double elapsed =
-	    static_cast<double>(
-	        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()) /
-	    static_cast<double>(input.queries.size());
+		static_cast<double>(
+			std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()) /
+		static_cast<double>(input.queries.size());
 
 	std::cout << input.data.size() << "," << input.queries.size() << "," << RMQ::name() << ","
-	          << rmq.space() << "," << sum << "," << elapsed << "\n";
+				<< rmq.space() << "," << sum << "," << elapsed << "\n";
 	std::cerr << std::setw(3) << (sum % 1000) << "\t" << std::fixed << std::setprecision(2)
-	          << elapsed << "ns/q\n";
+				<< elapsed << "ns/q\n";
 }
 
 int main(int argc, char* argv[]) {
@@ -192,13 +242,14 @@ int main(int argc, char* argv[]) {
 			if(entry.path().extension() == ".in") inputs.push_back(read_input(entry.path()));
 		}
 		std::sort(inputs.begin(), inputs.end(),
-		          [](const Input& a, const Input& b) { return a.data.size() < b.data.size(); });
+					[](const Input& a, const Input& b) { return a.data.size() < b.data.size(); });
 	}
 
 	for(const auto& input : inputs) {
-		bench<Naive>(input);
-		bench<Precompute>(input);
-		bench<SparseArray>(input);
+		//bench<Naive>(input);
+		//bench<Precompute>(input);
+		bench<SparseArrayA>(input);
+		bench<SparseArrayB>(input);
 		// TODO: Add other implementations here.
 	}
 
