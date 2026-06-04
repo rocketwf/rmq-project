@@ -117,7 +117,7 @@ struct SparseArrayB {
 		for (size_t lvl = 1; lvl < k; lvl++) {
 			for (size_t i = 0; i + (1 << lvl) <= data.size(); i++) {
 				tree[i][lvl] = std::min(tree[i][lvl - 1], 
-																tree[i + (1 << (lvl - 1))][lvl - 1]);
+				tree[i + (1 << (lvl - 1))][lvl - 1]);
 			}
 		}
 		return {std::move(tree)};
@@ -138,24 +138,63 @@ struct SparseArrayB {
 
 struct SegmentTree {
 	static std::string name() { return "SegmentTree"; };
-	static size_t max_n();  // optional, defaults to SIZE_MAX
+	static size_t max_n() { return 10'000'000; };
 	std::vector<std::vector<uint64_t>> _tree;
 
 	static SegmentTree build(const std::vector<uint64_t>& data) {
 		int k = std::bit_width(data.size()); // maximum level
-		decltype(_tree) tree(k);
-		tree[0] = data;
-		for (size_t lvl = 1; lvl < tree.size(); ++lvl) {
-			tree[lvl].emplace_back(std::vector<uint64_t>(data.size() / (1 << lvl)));
-			for (size_t i = 0; i <= data.size() / (1 << lvl); i += 2) {
-				tree[lvl][i] = std::min(tree[lvl - 1][i], tree[lvl - 1][i + 1]);
-			}
-		}
-		
-		return {std::move(tree)};
+		decltype(_tree) tree;
+
+		if (!data.empty()) {
+        tree.reserve(std::bit_width(data.size()) + 1);
+    }
+
+		tree.push_back(data);
+		size_t lvl = 1;
+    while (tree[lvl - 1].size() > 1) {
+      size_t prev_size = tree[lvl - 1].size();
+      size_t curr_size = (prev_size + 1) / 2;
+      tree.emplace_back(curr_size, 0);
+      for (size_t i = 0; i < curr_size; ++i) {
+        if (2 * i + 1 < prev_size) {
+          tree[lvl][i] = std::min(tree[lvl - 1][2 * i],
+                                  tree[lvl - 1][2 * i + 1]);
+        } else {
+          tree[lvl][i] = tree[lvl - 1][2 * i];
+        }
+      }
+      lvl++;
+    }
+    return {std::move(tree)};
 	};
-	size_t space() const;
-	uint64_t query(size_t l, size_t r) const;
+
+	size_t space() const {
+		size_t mem = sizeof(*this);
+		mem += _tree.capacity() * sizeof(std::vector<uint64_t>);
+		for (const auto& row : _tree) {
+		  mem += row.capacity() * sizeof(uint64_t);
+		}
+		return mem;
+	}
+
+  uint64_t query(size_t l, size_t r) const {
+  	uint64_t res = std::numeric_limits<uint64_t>::max();
+  	size_t lvl = 0;
+  	while (l < r && lvl < _tree.size()) {
+  	  if (l % 2 == 1) {
+  	    res = std::min(res, _tree[lvl][l]);
+  	    l++;
+  	  }
+  	  if (r % 2 == 1) {
+  	    r--;
+  	    res = std::min(res, _tree[lvl][r]);
+  	  }
+  	  l /= 2;
+  	  r /= 2;
+  	  lvl++;
+  	}
+  	return res;
+  }
 };
 
 struct BlockBased {
@@ -248,9 +287,9 @@ int main(int argc, char* argv[]) {
 	for(const auto& input : inputs) {
 		//bench<Naive>(input);
 		//bench<Precompute>(input);
-		bench<SparseArrayA>(input);
-		bench<SparseArrayB>(input);
-		// TODO: Add other implementations here.
+		//bench<SparseArrayA>(input);
+		//bench<SparseArrayB>(input);
+		bench<SegmentTree>(input);
 	}
 
 	return 0;
