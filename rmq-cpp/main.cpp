@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <bit>
+#include <cmath>
 
 // RMQ interface (duck-typed via templates):
 //
@@ -199,10 +200,47 @@ struct SegmentTree {
 
 struct BlockBased {
 	static std::string name() { return "BlockBased"; };
-	static size_t max_n();  // optional, defaults to SIZE_MAX
-	static BlockBased build(const std::vector<uint64_t>& data);
-	size_t space() const;
-	uint64_t query(size_t l, size_t r) const;
+	static size_t max_n() { return 10'000'000; };
+	std::vector<uint64_t> _data;
+	std::vector<uint64_t> _blocks;
+	size_t _block_size;
+
+	static BlockBased build(const std::vector<uint64_t>& data) {
+		size_t block_size = 2 << (static_cast<size_t>(std::log2(data.size())) / 2 - 1);
+		size_t num_blocks = (data.size() + block_size - 1) / block_size;
+		decltype(_blocks) blocks(num_blocks, std::numeric_limits<uint64_t>::max());
+		for (size_t i = 0; i < data.size(); i++) {
+			blocks[i / block_size] = std::min(blocks[i / block_size], data[i]);
+		}
+		//std::cout << "BS:" << block_size << "\n";
+		return {data, std::move(blocks), block_size};
+	};
+
+	size_t space() const {
+		return sizeof(*this) + (_data.capacity() + _blocks.capacity()) * sizeof(uint64_t);
+	};
+	uint64_t query(size_t l, size_t r) const {
+		size_t min = std::numeric_limits<uint64_t>::max();
+		size_t ld = l / _block_size;
+		size_t rd = r / _block_size;
+
+		if (ld == rd) {
+      for (size_t i = l; i < r; ++i) {
+        min = std::min(min, _data[i]);
+      }
+    } else {
+      for (size_t i = l; i < (ld + 1) * _block_size; ++i) {
+        min = std::min(min, _data[i]);
+      }
+      for (size_t i = ld + 1; i < rd; ++i) {
+        min = std::min(min, _blocks[i]);
+      }
+      for (size_t i = rd * _block_size; i < r; ++i) {
+        min = std::min(min, _data[i]);
+      }
+    }
+		return min;
+	};
 };
 
 struct CartesianTree {
@@ -285,11 +323,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	for(const auto& input : inputs) {
-		//bench<Naive>(input);
-		//bench<Precompute>(input);
-		//bench<SparseArrayA>(input);
-		//bench<SparseArrayB>(input);
+		bench<Naive>(input);
+		bench<Precompute>(input);
+		bench<SparseArrayA>(input);
+		bench<SparseArrayB>(input);
 		bench<SegmentTree>(input);
+		bench<BlockBased>(input);
 	}
 
 	return 0;
